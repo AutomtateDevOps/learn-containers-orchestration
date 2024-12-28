@@ -1,177 +1,53 @@
----
-layout: ../../layouts/BlogPost.astro
-title: "Kubernetes Deployment Strategies Explained"
-description: "Learn about different deployment strategies in Kubernetes including Rolling Updates, Blue-Green, and Canary deployments with practical examples."
-pubDate: 2024-03-24
----
-
 # Kubernetes Deployment Strategies
 
-## Rolling Updates (Default Strategy)
-The default and safest deployment strategy that gradually replaces old pods with new ones.
+Kubernetes offers a variety of deployment strategies to help you manage how applications are rolled out, updated, and scaled within the cluster. Understanding deployment strategies is critical for ensuring that your applications are both resilient and efficient. These strategies help in achieving zero downtime, rollback capability, and scaling adjustments based on demand.
 
+In this section, we will dive deeper into different deployment strategies in Kubernetes, how they work, and how to use them effectively.
+
+## Table of Contents
+
+1. [Rolling Update](#rolling-update)
+2. [Recreate Strategy](#recreate-strategy)
+3. [Blue-Green Deployment](#blue-green-deployment)
+4. [Canary Deployment](#canary-deployment)
+5. [A/B Testing Deployment](#ab-testing-deployment)
+6. [Batch Deployment](#batch-deployment)
+7. [Deployment Strategy Comparison](#deployment-strategy-comparison)
+8. [Choosing the Right Deployment Strategy](#choosing-the-right-deployment-strategy)
+
+---
+
+## Rolling Update
+
+The **Rolling Update** strategy is the default deployment strategy in Kubernetes. It allows you to update the application without downtime by incrementally replacing old versions of pods with new ones.
+
+### Key Features:
+- **Zero Downtime**: Ensures continuous availability by updating pods in a controlled manner.
+- **Control Over Deployment**: You can control the pace of the update with parameters like `maxSurge` and `maxUnavailable`.
+- **Automatic Rollback**: Kubernetes can automatically roll back to a previous stable version if the deployment fails.
+
+### How it Works:
+- Kubernetes replaces a few pods at a time, maintaining a specified number of replicas to ensure availability.
+- The update proceeds only if the new version is healthy; otherwise, it stops and rolls back the changes.
+
+#### Example:
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app
+  name: my-deployment
 spec:
-  replicas: 4
+  replicas: 3
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1        # Maximum extra pods
-      maxUnavailable: 1  # Maximum unavailable pods
-  template:
-    # Pod template...
-```
-
-### Advantages
-- Zero downtime deployment
-- Automatic rollback capability
-- Low risk and resource usage
-
-## Blue-Green Deployment
-Runs two identical environments, switching traffic from old (blue) to new (green) version.
-
-```yaml
-# Green deployment
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: app-green
-spec:
-  replicas: 3
+      maxSurge: 1         # Allows 1 additional pod to be created during the update
+      maxUnavailable: 1   # Allows 1 pod to be unavailable during the update
   template:
     metadata:
       labels:
-        app: myapp
-        version: green
-    # Pod template...
----
-# Service (initially pointing to blue)
-apiVersion: v1
-kind: Service
-metadata:
-  name: app
-spec:
-  selector:
-    app: myapp
-    version: blue  # Switch to 'green' to cutover
-  ports:
-    - port: 80
-```
-
-### Advantages
-- Instant rollback capability
-- Zero downtime
-- Testing new version before switch
-
-## Canary Deployment
-Gradually routes traffic to new version, testing with subset of users.
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: app-ingress
-  annotations:
-    nginx.ingress.kubernetes.io/canary: "true"
-    nginx.ingress.kubernetes.io/canary-weight: "20"
-spec:
-  rules:
-    - host: app.example.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: app-canary
-                port:
-                  number: 80
-```
-
-### Advantages
-- Risk mitigation
-- Early feedback
-- Gradual rollout
-
-## A/B Testing
-Similar to canary but focuses on testing features with specific user groups.
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  annotations:
-    nginx.ingress.kubernetes.io/canary: "true"
-    nginx.ingress.kubernetes.io/canary-by-header: "User-Agent"
-    nginx.ingress.kubernetes.io/canary-by-header-value: "Mobile"
-spec:
-  # Ingress spec...
-```
-
-### Advantages
-- Feature testing
-- User behavior analysis
-- Targeted rollouts
-
-## Best Practices
-
-1. **Health Checks**
-```yaml
-spec:
-  template:
+        app: my-app
     spec:
       containers:
-      - name: app
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-```
-
-2. **Resource Management**
-```yaml
-spec:
-  template:
-    spec:
-      containers:
-      - name: app
-        resources:
-          requests:
-            memory: "64Mi"
-            cpu: "250m"
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
-```
-
-3. **Rollback Strategy**
-```yaml
-kubectl rollout history deployment/app
-kubectl rollout undo deployment/app --to-revision=2
-```
-
-## Strategy Selection Guide
-
-Choose based on:
-- Application architecture
-- Business requirements
-- Risk tolerance
-- Resource availability
-- Monitoring capabilities
-
-| Strategy | Use Case | Risk Level | Resource Usage |
-|----------|----------|------------|----------------|
-| Rolling Update | General deployments | Low | Low |
-| Blue-Green | Critical applications | Medium | High |
-| Canary | Feature testing | Low-Medium | Medium |
-| A/B Testing | User testing | Low | Medium |
+        - name: my-app
+          image: my-app:v2

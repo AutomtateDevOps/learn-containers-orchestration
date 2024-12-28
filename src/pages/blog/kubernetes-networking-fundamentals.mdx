@@ -1,58 +1,66 @@
+# Advanced Kubernetes Networking
+
+Kubernetes networking is a critical component of your Kubernetes architecture. It allows communication between pods, services, and external systems. Understanding how networking works in Kubernetes will help you build scalable and reliable applications.
+
+In this section, we’ll cover advanced Kubernetes networking topics, such as network models, DNS, ingress controllers, network policies, and service meshes.
+
+## Table of Contents
+
+1. [Kubernetes Network Model](#kubernetes-network-model)
+2. [Pod Networking](#pod-networking)
+3. [Services and Service Discovery](#services-and-service-discovery)
+4. [Ingress Controllers](#ingress-controllers)
+5. [Network Policies](#network-policies)
+6. [Service Mesh](#service-mesh)
+7. [DNS in Kubernetes](#dns-in-kubernetes)
+8. [Advanced Networking Use Cases](#advanced-networking-use-cases)
+9. [Troubleshooting Kubernetes Networking](#troubleshooting-kubernetes-networking)
+
 ---
-layout: ../../layouts/BlogPost.astro
-title: "Kubernetes Networking Fundamentals"
-description: "Understanding Kubernetes networking concepts, services, ingress, and network policies."
-pubDate: 2024-03-22
+
+## Kubernetes Network Model
+
+Kubernetes follows a **flat network model**, where each pod gets its own IP address and can communicate with any other pod in the cluster without Network Address Translation (NAT).
+
+### Key Principles:
+- **Pod-to-Pod Communication**: Every pod in a cluster gets a unique IP address, and pods can communicate with each other using these IP addresses, regardless of where they are located.
+- **No NAT**: Kubernetes avoids Network Address Translation, so pod IPs are routable across the cluster.
+- **CNI (Container Network Interface)**: Kubernetes uses CNI plugins to configure networking. Examples of CNI plugins include Calico, Flannel, and Cilium.
+
+### Example: 
+In the Kubernetes network model, the pod `pod-1` in one node can communicate with the pod `pod-2` in another node using their respective IPs.
+
 ---
 
-# Kubernetes Networking Fundamentals
+## Pod Networking
 
-## Core Networking Concepts
+Pod networking refers to the communication between pods within a cluster. Kubernetes requires that all pods can communicate with each other without NAT, meaning each pod can reach any other pod in the cluster.
 
-### Pod Networking
-- Each Pod gets its own IP address
-- All containers within a Pod share the network namespace
-- Containers within a Pod can communicate via localhost
+### Key Features:
+- **Pod IPs**: Every pod is assigned a unique IP address within the cluster.
+- **Pod Communication**: Pods within the same node can communicate directly using their IP addresses.
+- **Network Policies**: Can be used to control traffic flow between pods.
 
-### Service Types
-1. **ClusterIP**: Internal-only access
-2. **NodePort**: Exposes the service on each node's IP
-3. **LoadBalancer**: Exposes the service externally
-4. **ExternalName**: Maps to an external DNS name
+### CNI Plugins:
+Kubernetes supports various CNI plugins for pod networking, including:
+- **Flannel**: A simple and efficient networking solution.
+- **Calico**: A high-performance networking and network security solution.
+- **Weave**: Provides simple networking for containerized applications.
+- **Cilium**: Provides API-aware networking and security using eBPF (extended Berkeley Packet Filter).
 
-## Network Policies
-
-Network Policies are like firewalls for Pods:
-
+#### Example:
 ```yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: api-allow
+  name: my-pod-networking
 spec:
-  podSelector:
-    matchLabels:
-      app: api
-  policyTypes:
-  - Ingress
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          role: frontend
-    ports:
-    - protocol: TCP
-      port: 8080
-```
-
-## Service Discovery
-
-Services provide stable endpoints for Pods:
-- DNS-based discovery
-- Environment variables
-- Service mesh integration
-
-## Load Balancing
-- Internal load balancing with Services
-- External load balancing with Ingress
-- Session affinity options
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: my-app
+          image: my-app:v1

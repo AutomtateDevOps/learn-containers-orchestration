@@ -1,0 +1,67 @@
+# Setting Up Kubernetes Cluster on Ubuntu, macOS, and Windows
+
+Setting up a Kubernetes cluster is essential for running containerized applications at scale. Kubernetes can be installed on various operating systems including Ubuntu, macOS, and Windows. In this guide, we will walk you through the steps for each operating system.
+
+## Table of Contents
+
+1. [Setting Up Kubernetes on Ubuntu](#setting-up-kubernetes-on-ubuntu)
+2. [Setting Up Kubernetes on macOS](#setting-up-kubernetes-on-macos)
+3. [Setting Up Kubernetes on Windows](#setting-up-kubernetes-on-windows)
+
+---
+
+## Setting Up Kubernetes on Ubuntu
+
+To set up Kubernetes on Ubuntu, we will use **Kubeadm**, which is a tool for easily setting up a Kubernetes cluster.
+
+### Prerequisites:
+- Ubuntu 20.04 or later
+- At least 2GB of RAM
+- A working internet connection
+
+### Steps:
+
+### 1. Install Docker
+Kubernetes uses Docker as its container runtime. To install Docker on Ubuntu, follow these steps:
+
+```bash
+sudo apt update
+sudo apt install apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+sudo apt update
+sudo apt install docker-ce
+
+
+### 2. Install Kubectl kubeadm Kubelet
+
+```bash
+sudo apt update
+sudo apt install -y apt-transport-https
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+sudo apt-add-repository "deb https://apt.kubernetes.io/ kubernetes-xenial main"
+sudo apt update
+sudo apt install -y kubelet kubeadm kubectl
+
+### 3. Disable swap
+```bash
+sudo swapoff -a
+
+### 4. Init kubernetes cluster
+```bash
+sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+
+
+### 5. Set Up kubeconfig for kubectl
+```bash
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+
+### 6. Install network
+```bash
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+
+

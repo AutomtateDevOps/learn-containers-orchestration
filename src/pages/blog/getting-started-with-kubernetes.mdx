@@ -1,144 +1,100 @@
+# Getting Started with Kubernetes
+
+Kubernetes (K8s) is an open-source container orchestration platform for automating the deployment, scaling, and management of containerized applications. It is widely used in cloud-native environments to manage applications in containers.
+
+## Table of Contents
+
+1. [Introduction to Kubernetes](#introduction-to-kubernetes)
+2. [Kubernetes Architecture](#kubernetes-architecture)
+3. [Setting Up Kubernetes](#setting-up-kubernetes)
+4. [Basic Kubernetes Concepts](#basic-kubernetes-concepts)
+5. [Working with Pods and Deployments](#working-with-pods-and-deployments)
+6. [Managing Kubernetes Clusters](#managing-kubernetes-clusters)
+7. [Kubernetes Resources](#kubernetes-resources)
+8. [Useful Commands](#useful-commands)
+
 ---
-layout: ../../layouts/BlogPost.astro
-title: "Getting Started with Kubernetes: A Beginner's Guide"
-description: "Learn the fundamentals of Kubernetes and how to deploy your first application in a production-ready container orchestration system."
-pubDate: 2024-03-20
+
+## Introduction to Kubernetes
+
+Kubernetes is designed to manage containerized applications across a cluster of machines. It automates various aspects like deployment, load balancing, scaling, and monitoring, making it essential for production-grade containerized applications.
+
+### Key Features:
+- **Auto-scaling:** Automatically scale your applications based on resource usage.
+- **Self-healing:** If a container fails, Kubernetes can restart or replace it.
+- **Load balancing:** Distributes traffic to healthy containers across a cluster.
+- **Declarative configuration:** Kubernetes allows you to define the desired state of your application and ensures it matches the real-world state.
+
+## Kubernetes Architecture
+
+Kubernetes follows a **client-server** model and consists of several key components:
+
+### Master Node
+The **master node** is responsible for managing the Kubernetes cluster, coordinating workloads, and maintaining the desired state of the cluster.
+
+- **API Server:** The central control point for the cluster. Exposes the Kubernetes API and is responsible for the entire cluster's state.
+- **Controller Manager:** Responsible for ensuring that the desired state of the cluster is met (e.g., managing deployments, replicas, etc.).
+- **Scheduler:** Schedules pods (containers) on available worker nodes.
+- **Etcd:** A key-value store that holds the cluster's configuration data.
+
+### Worker Node
+A **worker node** runs the containers and executes the tasks assigned by the master node.
+
+- **Kubelet:** An agent that runs on each worker node and ensures the containers are running as expected.
+- **Kube-Proxy:** Handles network routing for services and ensures load balancing.
+- **Container Runtime:** Runs the containerized applications (e.g., Docker, containerd).
+
+## Setting Up Kubernetes
+
+### Prerequisites:
+1. A Linux/macOS/Windows machine or cloud instance.
+2. **kubectl:** Command-line tool to interact with your Kubernetes cluster.
+3. **Minikube:** A tool to create a local Kubernetes cluster (useful for development and testing).
+4. **Docker:** Required to build container images.
+
+### Installation on Local Machine (Using Minikube)
+
+1. Install **Minikube**:
+    ```bash
+    # For macOS
+    brew install minikube
+
+    # For Linux
+    curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+    sudo mv minikube-linux-amd64 /usr/local/bin/minikube
+    ```
+
+2. Start Minikube:
+    ```bash
+    minikube start
+    ```
+
+3. Install **kubectl**:
+    ```bash
+    brew install kubectl  # macOS
+
+    curl -LO "https://dl.k8s.io/release/v1.24.0/bin/linux/amd64/kubectl"
+    sudo mv kubectl /usr/local/bin/kubectl  # Linux
+    ```
+
+4. Verify Kubernetes is running:
+    ```bash
+    kubectl get nodes
+    ```
+
 ---
 
-# Getting Started with Kubernetes: A Beginner's Guide
+## Basic Kubernetes Concepts
 
-Kubernetes has become the de facto standard for container orchestration in modern cloud-native applications. In this guide, we'll explore the basics of Kubernetes and how to get started with your first deployment.
-
-## What is Kubernetes?
-
-Kubernetes (K8s) is an open-source container orchestration platform that automates the deployment, scaling, and management of containerized applications. It was originally developed by Google and is now maintained by the Cloud Native Computing Foundation (CNCF).
-
-## Key Concepts
-
-### 1. Pods
-- Smallest deployable units in Kubernetes
-- Can contain one or more containers
-- Share network namespace and storage
-- Have a unique IP address
-
-### 2. Deployments
-- Manage the lifecycle of pods
-- Handle rolling updates and rollbacks
-- Ensure desired state maintenance
-- Support scaling operations
-
-### 3. Services
-- Provide stable network endpoints
-- Load balance traffic to pods
-- Support service discovery
-- Enable external access
-
-### 4. ConfigMaps and Secrets
-- Store configuration data
-- Manage sensitive information
-- Decouple configuration from code
-- Support dynamic updates
-
-## Your First Deployment
-
-Here's a complete example of deploying a web application with configuration:
+### Pod
+A **Pod** is the smallest deployable unit in Kubernetes. It can host one or more containers that share the same network and storage resources.
 
 ```yaml
-# ConfigMap for application configuration
 apiVersion: v1
-kind: ConfigMap
+kind: Pod
 metadata:
-  name: web-config
-data:
-  APP_COLOR: blue
-  APP_PORT: "80"
-
----
-# Deployment
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: web-app
+  name: my-pod
 spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: web
-  template:
-    metadata:
-      labels:
-        app: web
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:latest
-        ports:
-        - containerPort: 80
-        envFrom:
-        - configMapRef:
-            name: web-config
-        resources:
-          requests:
-            memory: "64Mi"
-            cpu: "250m"
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
-
----
-# Service
-apiVersion: v1
-kind: Service
-metadata:
-  name: web-service
-spec:
-  type: LoadBalancer
-  selector:
-    app: web
-  ports:
-  - port: 80
-    targetPort: 80
-```
-
-## Basic kubectl Commands
-
-```bash
-# View all resources
-kubectl get all
-
-# Describe a specific resource
-kubectl describe deployment web-app
-
-# View logs
-kubectl logs deployment/web-app
-
-# Scale deployment
-kubectl scale deployment web-app --replicas=5
-
-# Update image
-kubectl set image deployment/web-app nginx=nginx:1.19
-```
-
-## Best Practices
-
-1. **Resource Management**
-   - Always set resource requests and limits
-   - Monitor resource usage
-   - Use horizontal pod autoscaling
-
-2. **High Availability**
-   - Deploy multiple replicas
-   - Use pod anti-affinity
-   - Implement health checks
-
-3. **Security**
-   - Use RBAC for access control
-   - Implement network policies
-   - Regularly update images
-
-4. **Monitoring**
-   - Set up prometheus for metrics
-   - Use logging solutions
-   - Implement alerts
-
-Stay tuned for more detailed tutorials on Kubernetes components and best practices!
+  containers:
+    - name: my-container
+      image: nginx

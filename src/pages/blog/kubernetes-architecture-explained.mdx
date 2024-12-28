@@ -1,90 +1,139 @@
----
-layout: ../../layouts/BlogPost.astro
-title: "Kubernetes Architecture Explained: Components and Their Roles"
-description: "Deep dive into Kubernetes architecture, exploring control plane components, worker nodes, and how they work together."
-pubDate: 2024-03-21
+# Kubernetes Architecture
+
+Kubernetes is a powerful container orchestration platform that helps manage containerized applications in a distributed environment. Its architecture follows a **client-server** model, which separates concerns and ensures scalability, flexibility, and fault tolerance.
+
+In this section, we will explore the different components of Kubernetes and how they work together to manage containers across multiple nodes.
+
+## Table of Contents
+
+1. [Kubernetes Master Node](#kubernetes-master-node)
+2. [Kubernetes Worker Node](#kubernetes-worker-node)
+3. [Core Components of Kubernetes](#core-components-of-kubernetes)
+   - [API Server](#api-server)
+   - [Controller Manager](#controller-manager)
+   - [Scheduler](#scheduler)
+   - [Etcd](#etcd)
+4. [Kubernetes Networking](#kubernetes-networking)
+5. [Kubernetes Storage Architecture](#kubernetes-storage-architecture)
+6. [Kubernetes Add-ons](#kubernetes-add-ons)
+
 ---
 
-# Kubernetes Architecture Explained
+## Kubernetes Master Node
 
-## Control Plane Components
+The **Master Node** is responsible for managing the entire Kubernetes cluster. It controls and manages the cluster's state, scheduling, and overall operation. All the control plane components (API Server, Controller Manager, Scheduler) run on the master node. 
+
+### Responsibilities of the Master Node:
+- Manages the **cluster’s state** (e.g., which nodes are available, which applications are running).
+- **Schedules** the workloads (pods) across the worker nodes.
+- Ensures that the desired state of the applications is maintained and updated.
+- Manages the **API** that allows users and other components to interact with the cluster.
+
+---
+
+## Kubernetes Worker Node
+
+A **Worker Node** is where the applications (containers) run. These nodes handle the actual execution of the pods. A Kubernetes cluster consists of multiple worker nodes that interact with the master node to ensure the applications run as expected.
+
+### Responsibilities of the Worker Node:
+- **Running Pods**: Executes the containers that are part of a pod.
+- **Kubelet**: Ensures that the containers in each pod are running and healthy.
+- **Kube-Proxy**: Manages network communication for the pods, load balancing requests to the pods.
+- **Container Runtime**: Runs the containers (e.g., Docker, containerd).
+
+Each worker node can host multiple pods, and these pods are the smallest unit of execution in Kubernetes.
+
+---
+
+## Core Components of Kubernetes
 
 ### API Server
-The API server is the front door to the Kubernetes control plane. All communications, whether from kubectl, the dashboard, or between components, go through the API server.
 
-### etcd
-The cluster's database that stores all cluster state and configuration data. It's a distributed key-value store that provides:
-- Strong consistency
-- High availability
-- Reliable data storage
+The **API Server** (kube-apiserver) is the central management point for all communication within the Kubernetes cluster. It exposes the Kubernetes API, and all other components interact with it through HTTP requests.
 
-### Scheduler
-Watches for new Pods with no assigned node and selects a node for them to run on based on:
-- Resource requirements
-- Hardware/software/policy constraints
-- Affinity/anti-affinity specifications
-- Data locality
-
-### Controller Manager
-Runs controller processes that regulate the state of the cluster:
-- Node Controller: Monitors node health
-- Replication Controller: Maintains correct number of pods
-- Endpoints Controller: Populates Endpoint objects
-- Service Account & Token Controllers: Handle authentication
-
-## Worker Node Components
-
-### kubelet
-The primary node agent that:
-- Ensures containers are running in a Pod
-- Reports node and Pod status to the API server
-- Handles container operations
-
-### kube-proxy
-Maintains network rules on nodes that allow network communication to Pods from inside or outside the cluster.
-
-### Container Runtime
-The software responsible for running containers (Docker, containerd, CRI-O).
-
-## Example: Multi-tier Application Deployment
-
-```yaml
-# Frontend Service
-apiVersion: v1
-kind: Service
-metadata:
-  name: frontend
-spec:
-  type: LoadBalancer
-  ports:
-  - port: 80
-  selector:
-    app: frontend
+- **Function**: It serves as the gateway for accessing and managing the state of the cluster.
+- **Responsibility**: All kubectl commands, client requests, and controller operations interact with the API server.
+  
+  **Example**: When you run `kubectl get pods`, the request goes through the API server to retrieve the pod information.
 
 ---
-# Frontend Deployment
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: frontend
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: frontend
-  template:
-    metadata:
-      labels:
-        app: frontend
-    spec:
-      containers:
-      - name: frontend
-        image: nginx:latest
-        resources:
-          requests:
-            memory: "64Mi"
-            cpu: "250m"
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
-```
+
+### Controller Manager
+
+The **Controller Manager** is responsible for ensuring that the cluster's desired state matches the current state. It runs multiple controllers that monitor the state of the cluster and make necessary adjustments.
+
+- **Function**: Ensures the cluster state is consistent and as per the configuration defined by the user.
+- **Controllers**: Some of the key controllers include:
+  - **Node Controller**: Monitors the health of nodes.
+  - **Replication Controller**: Ensures that the desired number of pod replicas are running.
+  - **Deployment Controller**: Manages deployment updates and rollbacks.
+  
+  **Example**: If a pod goes down, the replication controller will create a new one to replace it.
+
+---
+
+### Scheduler
+
+The **Scheduler** (kube-scheduler) is responsible for placing pods onto the appropriate worker nodes based on available resources (CPU, memory, etc.).
+
+- **Function**: It watches for unscheduled pods and assigns them to suitable nodes based on resource availability and other scheduling constraints.
+- **Responsibilities**:
+  - Evaluates node resource availability.
+  - Ensures high availability by distributing workloads effectively.
+
+  **Example**: If a node is running out of memory, the scheduler may decide to place a new pod on a different node.
+
+---
+
+### Etcd
+
+**Etcd** is a distributed key-value store used by Kubernetes to store all cluster data and configuration information. It is a critical part of the system, holding the desired and actual state of the Kubernetes cluster.
+
+- **Function**: Stores the configuration data, cluster state, secrets, and metadata.
+- **Responsibility**: Acts as the source of truth for the entire Kubernetes cluster. The other components query etcd to retrieve the current state of the cluster.
+
+  **Example**: When you create a pod or a deployment, the API server writes this information to etcd.
+
+---
+
+## Kubernetes Networking
+
+Kubernetes has a flat networking model, which means all pods can communicate with each other across nodes without needing Network Address Translation (NAT). This enables seamless communication and scaling of applications within the cluster.
+
+### Key Networking Components:
+- **Kube-Proxy**: Each worker node runs a kube-proxy, which handles traffic routing between services and pods.
+- **DNS**: Kubernetes has an integrated DNS system that resolves service names to their corresponding IP addresses.
+- **CNI (Container Network Interface)**: Kubernetes uses CNI plugins (e.g., Calico, Flannel) for network management and pod-to-pod communication.
+
+---
+
+## Kubernetes Storage Architecture
+
+Kubernetes abstracts the underlying storage hardware to make it easier to manage persistent data across pods.
+
+### Key Storage Components:
+- **Persistent Volumes (PV)**: Represents a piece of storage in the cluster, typically backed by cloud storage, NFS, or local disks.
+- **Persistent Volume Claims (PVC)**: Allows pods to request storage without knowing the details of the underlying volume.
+- **Storage Classes**: Define different types of storage and allow users to request specific storage characteristics (e.g., fast SSDs or slow HDDs).
+
+---
+
+## Kubernetes Add-ons
+
+Kubernetes also includes a set of add-ons to extend its functionality. These add-ons are optional, but they provide important services that are commonly needed in Kubernetes environments.
+
+### Common Add-ons:
+- **DNS**: Resolves service names to IP addresses for pod-to-pod communication.
+- **Ingress Controller**: Manages external access to services (usually HTTP/HTTPS traffic) using Ingress resources.
+- **Metrics Server**: Collects and aggregates metrics like CPU and memory usage from the nodes and pods.
+- **Dashboard**: A web-based UI for interacting with the cluster.
+
+---
+
+## Conclusion
+
+The architecture of Kubernetes is designed for scalability, fault tolerance, and ease of management. By splitting the system into **Master Nodes** and **Worker Nodes** and distributing responsibilities like scheduling, state management, and networking across dedicated components, Kubernetes makes it possible to efficiently manage large-scale containerized applications.
+
+Each component plays a critical role in maintaining the health and scalability of the cluster, ensuring that the applications running on Kubernetes remain available, consistent, and well-managed.
+
+> Happy Learning Kubernetes! 🚀

@@ -1,0 +1,128 @@
+---
+layout: ../../layouts/BlogPost.astro
+title: "Understanding Kubernetes Cluster Components"
+description: "A detailed look at the essential components that make up a Kubernetes cluster and how they work together."
+pubDate: 2024-03-23
+---
+
+# Understanding Kubernetes Cluster Components
+
+## Control Plane Components
+
+### 1. kube-apiserver
+The API server is the primary management point for the cluster:
+- Validates and processes REST requests
+- Updates etcd with cluster state
+- Enables communication between all components
+- Handles authentication and authorization
+
+### 2. etcd
+The cluster's consistent and highly-available key-value store:
+- Stores all cluster data
+- Handles leader election
+- Maintains configuration data
+- Ensures state consistency
+
+### 3. kube-scheduler
+Responsible for pod scheduling decisions:
+- Watches for new pods
+- Assigns pods to nodes
+- Considers:
+  - Resource requirements
+  - Hardware constraints
+  - Software constraints
+  - Node affinity/anti-affinity
+
+### 4. kube-controller-manager
+Runs core control loops:
+- Node Controller
+- Replication Controller
+- Endpoints Controller
+- Service Account Controller
+- Token Controller
+
+## Node Components
+
+### 1. kubelet
+The node agent:
+- Ensures containers run in pods
+- Manages container lifecycle
+- Reports node and pod status
+- Handles volume mounting
+
+### 2. kube-proxy
+The network proxy:
+- Implements Services concept
+- Manages pod networking
+- Handles load balancing
+- Maintains network rules
+
+### 3. Container Runtime
+The software that runs containers:
+- containerd
+- CRI-O
+- Docker Engine
+
+## Add-on Components
+
+### 1. CoreDNS
+Provides DNS services:
+- Service discovery
+- Pod DNS resolution
+- Cluster DNS
+
+### 2. Metrics Server
+Collects resource metrics:
+- CPU usage
+- Memory usage
+- Supports autoscaling
+
+## Component Interaction Example
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: example-pod
+spec:
+  containers:
+  - name: web
+    image: nginx:latest
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: 80
+      initialDelaySeconds: 5
+      periodSeconds: 10
+```
+
+When this Pod is created:
+1. API Server validates the request
+2. etcd stores the Pod configuration
+3. Scheduler assigns the Pod to a node
+4. kubelet creates the container
+5. kube-proxy sets up networking
+
+## Best Practices
+
+1. **High Availability**
+   - Deploy multiple control plane nodes
+   - Use etcd cluster with odd number of members
+   - Configure proper backup strategies
+
+2. **Security**
+   - Enable RBAC
+   - Use TLS everywhere
+   - Rotate certificates regularly
+
+3. **Monitoring**
+   - Monitor all components
+   - Set up alerts for component failures
+   - Keep components updated

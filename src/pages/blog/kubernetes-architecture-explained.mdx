@@ -1,0 +1,90 @@
+---
+layout: ../../layouts/BlogPost.astro
+title: "Kubernetes Architecture Explained: Components and Their Roles"
+description: "Deep dive into Kubernetes architecture, exploring control plane components, worker nodes, and how they work together."
+pubDate: 2024-03-21
+---
+
+# Kubernetes Architecture Explained
+
+## Control Plane Components
+
+### API Server
+The API server is the front door to the Kubernetes control plane. All communications, whether from kubectl, the dashboard, or between components, go through the API server.
+
+### etcd
+The cluster's database that stores all cluster state and configuration data. It's a distributed key-value store that provides:
+- Strong consistency
+- High availability
+- Reliable data storage
+
+### Scheduler
+Watches for new Pods with no assigned node and selects a node for them to run on based on:
+- Resource requirements
+- Hardware/software/policy constraints
+- Affinity/anti-affinity specifications
+- Data locality
+
+### Controller Manager
+Runs controller processes that regulate the state of the cluster:
+- Node Controller: Monitors node health
+- Replication Controller: Maintains correct number of pods
+- Endpoints Controller: Populates Endpoint objects
+- Service Account & Token Controllers: Handle authentication
+
+## Worker Node Components
+
+### kubelet
+The primary node agent that:
+- Ensures containers are running in a Pod
+- Reports node and Pod status to the API server
+- Handles container operations
+
+### kube-proxy
+Maintains network rules on nodes that allow network communication to Pods from inside or outside the cluster.
+
+### Container Runtime
+The software responsible for running containers (Docker, containerd, CRI-O).
+
+## Example: Multi-tier Application Deployment
+
+```yaml
+# Frontend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: frontend
+
+---
+# Frontend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: nginx:latest
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+```

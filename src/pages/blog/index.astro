@@ -1,0 +1,23 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import BlogPostCard from '../../components/BlogPostCard.astro';
+
+const posts = await Astro.glob('./*.mdx');
+const sortedPosts = posts.sort(
+  (a, b) => new Date(b.frontmatter.pubDate).getTime() - new Date(a.frontmatter.pubDate).getTime()
+);
+---
+
+<Layout title="Blog Posts - DevOps Blog">
+  <h1 class="text-4xl font-bold mb-8">All Blog Posts</h1>
+  <div class="grid gap-8 md:grid-cols-2">
+    {sortedPosts.map((post) => (
+      <BlogPostCard
+        title={post.frontmatter.title}
+        description={post.frontmatter.description}
+        pubDate={new Date(post.frontmatter.pubDate)}
+        url={post.url}
+      />
+    ))}
+  </div>
+</Layout>

@@ -1,0 +1,58 @@
+---
+layout: ../../layouts/BlogPost.astro
+title: "Kubernetes Networking Fundamentals"
+description: "Understanding Kubernetes networking concepts, services, ingress, and network policies."
+pubDate: 2024-03-22
+---
+
+# Kubernetes Networking Fundamentals
+
+## Core Networking Concepts
+
+### Pod Networking
+- Each Pod gets its own IP address
+- All containers within a Pod share the network namespace
+- Containers within a Pod can communicate via localhost
+
+### Service Types
+1. **ClusterIP**: Internal-only access
+2. **NodePort**: Exposes the service on each node's IP
+3. **LoadBalancer**: Exposes the service externally
+4. **ExternalName**: Maps to an external DNS name
+
+## Network Policies
+
+Network Policies are like firewalls for Pods:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-allow
+spec:
+  podSelector:
+    matchLabels:
+      app: api
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          role: frontend
+    ports:
+    - protocol: TCP
+      port: 8080
+```
+
+## Service Discovery
+
+Services provide stable endpoints for Pods:
+- DNS-based discovery
+- Environment variables
+- Service mesh integration
+
+## Load Balancing
+- Internal load balancing with Services
+- External load balancing with Ingress
+- Session affinity options

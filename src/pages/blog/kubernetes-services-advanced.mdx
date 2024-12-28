@@ -1,0 +1,286 @@
+---
+layout: ../../layouts/BlogPost.astro
+title: "Advanced Kubernetes Services: Beyond the Basics"
+description: "Deep dive into Kubernetes Services including service types, DNS, load balancing, and advanced configurations with real-world examples."
+pubDate: 2024-03-25
+---
+
+# Advanced Kubernetes Services
+
+## Service Types Deep Dive
+
+### ClusterIP Service
+Internal-only service with advanced configurations:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  annotations:
+    service.kubernetes.io/topology-aware-hints: "auto"
+spec:
+  type: ClusterIP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app: backend
+```
+
+### NodePort Advanced Configuration
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: game-service
+  annotations:
+    service.kubernetes.io/external-traffic: Local
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 8080
+      nodePort: 30080
+      protocol: TCP
+  externalTrafficPolicy: Local
+  healthCheckNodePort: 30256
+```
+
+### LoadBalancer with Annotations
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-connection-draining-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-connection-draining-timeout: "60"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 443
+      targetPort: 8443
+  selector:
+    app: web
+```
+
+## Advanced Service Features
+
+### Multi-Port Services
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: multi-port-service
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+    - name: https
+      port: 443
+      targetPort: 8443
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+  selector:
+    app: web
+```
+
+### Headless Services
+For direct pod-to-pod communication:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: stateful-service
+spec:
+  clusterIP: None
+  ports:
+    - port: 80
+  selector:
+    app: stateful
+  publishNotReadyAddresses: true
+```
+
+### ExternalName Service
+DNS CNAME record for external services:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-service
+spec:
+  type: ExternalName
+  externalName: api.external-service.com
+```
+
+## Service Discovery and DNS
+
+### DNS Patterns
+```yaml
+# Format: <service-name>.<namespace>.svc.cluster.local
+# Examples:
+- backend.default.svc.cluster.local      # Same namespace
+- backend.prod.svc.cluster.local         # Different namespace
+- backend-0.stateful.default.svc.cluster.local  # StatefulSet pod
+```
+
+### Custom DNS Configurations
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: custom-dns-service
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: api.example.com
+    external-dns.alpha.kubernetes.io/ttl: "60"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+```
+
+## Advanced Load Balancing
+
+### Session Affinity
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sticky-service
+spec:
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  ports:
+    - port: 80
+```
+
+### Custom Load Balancing
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: custom-lb-service
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:region:account:certificate/cert-id
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 443
+      targetPort: 8443
+```
+
+## Service Mesh Integration
+
+### Istio Virtual Service
+```yaml
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews-route
+spec:
+  hosts:
+    - reviews
+  http:
+    - route:
+        - destination:
+            host: reviews
+            subset: v2
+          weight: 75
+        - destination:
+            host: reviews
+            subset: v3
+          weight: 25
+```
+
+## Monitoring and Troubleshooting
+
+### Service Endpoints
+```bash
+# View service endpoints
+kubectl get endpoints <service-name>
+
+# Debug service connectivity
+kubectl run test-pod --image=busybox -it --rm -- wget -qO- http://service-name
+
+# Check DNS resolution
+kubectl run test-dns --image=busybox -it --rm -- nslookup service-name
+```
+
+## Best Practices
+
+1. **Service Naming**
+   - Use meaningful, consistent names
+   - Follow DNS naming conventions
+   - Include purpose in name
+
+2. **Security**
+   - Use NetworkPolicies with services
+   - Implement TLS termination
+   - Restrict service access
+
+3. **Performance**
+   - Use appropriate service type
+   - Configure proper health checks
+   - Monitor service metrics
+
+4. **High Availability**
+   - Multiple pod replicas
+   - Cross-zone load balancing
+   - Proper failover configuration
+
+## Common Patterns
+
+### Internal Service Mesh
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: internal-service
+  annotations:
+    linkerd.io/inject: enabled
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+  selector:
+    app: internal
+```
+
+### External Service Integration
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-db
+spec:
+  type: ExternalName
+  externalName: db.example.com
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: external-db
+subsets:
+  - addresses:
+      - ip: 192.168.1.100
+    ports:
+      - port: 5432
+```
+
+This comprehensive guide covers advanced aspects of Kubernetes Services, providing practical examples and best practices for production environments.
